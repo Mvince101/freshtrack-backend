@@ -26,7 +26,8 @@ const CLASS_NAMES = [
 class ImageProcessor {
   constructor() {
     this.session = null;
-    this.modelPath = path.join(__dirname, '../models/best.onnx');
+    // Use environment variable or fallback to default path
+    this.modelPath = process.env.MODEL_PATH || path.join(__dirname, '../models/best.onnx');
     this.inputSize = 640; // YOLO input size
     this.confidenceThreshold = 0.5;
     this.nmsThreshold = 0.4;
@@ -34,10 +35,13 @@ class ImageProcessor {
 
   async initialize() {
     try {
+      console.log('Looking for model at:', this.modelPath);
       if (!fs.existsSync(this.modelPath)) {
-        console.warn('ONNX model not found. Using mock detection for development.');
+        console.warn('ONNX model not found at:', this.modelPath);
+        console.warn('Using mock detection for development.');
         return false;
       }
+      console.log('ONNX model found at:', this.modelPath);
 
       // Try to load ONNX runtime, but fallback gracefully if it fails
       try {
