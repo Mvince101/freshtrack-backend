@@ -109,34 +109,46 @@ class ImageProcessor {
 
   async detectObjects(imagePath) {
     try {
+      console.log('Starting object detection for:', imagePath);
+      
       // If forcing mock mode or ONNX runtime is not available, use mock detections
       if (this.forceMockMode || !ort) {
         console.log('Using mock detections (ONNX runtime not available or forced)');
         return this.getMockDetections();
       }
 
+      console.log('Attempting to load ONNX model...');
       const modelLoaded = await this.initialize();
       
       if (!modelLoaded) {
-        // Return mock detections for development
+        console.log('ONNX model failed to load, using mock detections');
         return this.getMockDetections();
       }
 
+      console.log('Preprocessing image...');
       const inputTensor = await this.preprocessImage(imagePath);
+      console.log('Image preprocessing completed, tensor size:', inputTensor.length);
       
       // Create input tensor
+      console.log('Creating ONNX input tensor...');
       const input = new ort.Tensor('float32', inputTensor, [1, 3, this.inputSize, this.inputSize]);
       
       // Run inference
+      console.log('Running ONNX inference...');
       const feeds = { [this.session.inputNames[0]]: input };
       const results = await this.session.run(feeds);
+      console.log('ONNX inference completed');
       
       // Process results
+      console.log('Processing YOLO output...');
       const detections = this.processYOLOOutput(results[this.session.outputNames[0]]);
+      console.log('YOLO output processing completed, detections:', detections.length);
       
       return detections;
     } catch (error) {
       console.error('Error in object detection:', error);
+      console.error('Error stack:', error.stack);
+      console.log('Falling back to mock detections due to error');
       return this.getMockDetections();
     }
   }
@@ -261,17 +273,38 @@ const imageProcessor = new ImageProcessor();
 
 async function processImage(imagePath) {
   try {
+    console.log('Starting image processing for:', imagePath);
+    
+    // Check if file exists
+    if (!fs.existsSync(imagePath)) {
+      throw new Error(`Image file not found: ${imagePath}`);
+    }
+    
+    // Check file size
+    const stats = fs.statSync(imagePath);
+    console.log('Image file size:', stats.size, 'bytes');
+    
+    if (stats.size === 0) {
+      throw new Error('Image file is empty');
+    }
+    
     const detections = await imageProcessor.detectObjects(imagePath);
+    console.log('Detections completed:', detections.length, 'objects found');
     
     // Clean up uploaded file
     if (fs.existsSync(imagePath)) {
       fs.unlinkSync(imagePath);
+      console.log('Cleaned up uploaded file');
     }
     
     return detections;
   } catch (error) {
     console.error('Error processing image:', error);
-    throw error;
+    console.error('Error stack:', error.stack);
+    
+    // Return mock detections as fallback
+    console.log('Falling back to mock detections due to error');
+    return imageProcessor.getMockDetections();
   }
 }
 

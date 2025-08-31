@@ -70,6 +70,30 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Test endpoint for debugging
+app.get('/api/test', (req, res) => {
+  try {
+    const testData = {
+      message: 'Test endpoint working',
+      timestamp: new Date().toISOString(),
+      environment: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        memory: process.memoryUsage(),
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT,
+          FORCE_MOCK_MODE: process.env.FORCE_MOCK_MODE
+        }
+      }
+    };
+    res.json(testData);
+  } catch (error) {
+    res.status(500).json({ error: 'Test endpoint failed', details: error.message });
+  }
+});
+
 // Main detection endpoint
 app.post('/api/detect', upload.single('image'), async (req, res) => {
   try {
