@@ -91,6 +91,7 @@ node_modules/
 # Keep Railway config files
 !railway.json
 !Procfile
+!Dockerfile
 
 # OS generated files
 .DS_Store

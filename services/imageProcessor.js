@@ -5,10 +5,20 @@ const fs = require('fs');
 // Try to load ONNX runtime, but make it optional
 let ort;
 try {
-  ort = require('onnxruntime-node');
+  // Try onnxruntime-web first (better for cloud environments)
+  ort = require('onnxruntime-web');
+  console.log('ONNX Runtime Web loaded successfully');
 } catch (error) {
-  console.warn('ONNX runtime not available. Using mock detection only.');
-  ort = null;
+  try {
+    // Fallback to onnxruntime-node if web version fails
+    ort = require('onnxruntime-node');
+    console.log('ONNX Runtime Node loaded successfully');
+  } catch (fallbackError) {
+    console.warn('ONNX runtime not available. Using mock detection only.');
+    console.warn('Web version error:', error.message);
+    console.warn('Node version error:', fallbackError.message);
+    ort = null;
+  }
 }
 
 // Food class names (matching your YOLO model)
@@ -31,10 +41,19 @@ class ImageProcessor {
     this.inputSize = 640; // YOLO input size
     this.confidenceThreshold = 0.5;
     this.nmsThreshold = 0.4;
+    
+    // Force mock mode if ONNX is not available
+    this.forceMockMode = process.env.FORCE_MOCK_MODE === 'true' || !ort;
   }
 
   async initialize() {
     try {
+      // If forcing mock mode, skip ONNX initialization
+      if (this.forceMockMode) {
+        console.log('Forcing mock detection mode');
+        return false;
+      }
+
       console.log('Looking for model at:', this.modelPath);
       if (!fs.existsSync(this.modelPath)) {
         console.warn('ONNX model not found at:', this.modelPath);
@@ -89,9 +108,9 @@ class ImageProcessor {
 
   async detectObjects(imagePath) {
     try {
-      // If ONNX runtime is not available, use mock detections
-      if (!ort) {
-        console.log('ONNX runtime not available, using mock detections');
+      // If forcing mock mode or ONNX runtime is not available, use mock detections
+      if (this.forceMockMode || !ort) {
+        console.log('Using mock detections (ONNX runtime not available or forced)');
         return this.getMockDetections();
       }
 
