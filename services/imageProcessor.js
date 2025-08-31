@@ -59,7 +59,15 @@ class ImageProcessor {
       try {
         const options = {
           executionProviders: ['cpu'],
-          graphOptimizationLevel: 'all'
+          graphOptimizationLevel: 'basic', // Use basic optimization to save memory
+          enableCpuMemArena: false, // Disable CPU memory arena to save memory
+          enableMemPattern: false, // Disable memory pattern to save memory
+          extra: {
+            session: {
+              use_ort_model_bytes_directly: true, // Use model bytes directly
+              log_severity_level: 0 // Minimal logging
+            }
+          }
         };
 
         this.session = await ort.InferenceSession.create(this.modelPath, options);

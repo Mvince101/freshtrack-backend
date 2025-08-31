@@ -9,6 +9,9 @@ RUN apk add --no-cache \
     libc6-compat \
     && rm -rf /var/cache/apk/*
 
+# Set Node.js memory limits for Railway
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
 # Set working directory
 WORKDIR /app
 
@@ -27,9 +30,9 @@ RUN mkdir -p uploads
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check - more lenient for Railway
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=5 \
   CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application with a small delay for Railway
+CMD ["sh", "-c", "sleep 5 && npm start"]
