@@ -5,20 +5,13 @@ const fs = require('fs');
 // Try to load ONNX runtime, but make it optional
 let ort;
 try {
-  // Try onnxruntime-web first (better for cloud environments)
+  // Use onnxruntime-web (better for cloud environments)
   ort = require('onnxruntime-web');
   console.log('ONNX Runtime Web loaded successfully');
 } catch (error) {
-  try {
-    // Fallback to onnxruntime-node if web version fails
-    ort = require('onnxruntime-node');
-    console.log('ONNX Runtime Node loaded successfully');
-  } catch (fallbackError) {
-    console.warn('ONNX runtime not available. Using mock detection only.');
-    console.warn('Web version error:', error.message);
-    console.warn('Node version error:', fallbackError.message);
-    ort = null;
-  }
+  console.warn('ONNX runtime not available. Using mock detection only.');
+  console.warn('Web version error:', error.message);
+  ort = null;
 }
 
 // Food class names (matching your YOLO model)
